@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id
+  email      String?  @unique()
+  provider   Provider
+  username   String?  @unique()
+  avatar     String?
+  avatarHash String?
+  role       Role     @default(MEMBER)
+  medias     Media[]
+  followers  User[]   @relation("UserFollows")
+  following  User[]   @relation("UserFollows")
+  posts      Post[]
+  free       Boolean  @default(true)
+  createAt   DateTime @default(now())
+  updateAt   DateTime @updatedAt()
+}
+
+model Post {
+  id       String   @id @default(uuid())
+  media    Media[]
+  content  String
+  comments Post[]   @relation("comments")
+  post     Post?    @relation("comments", fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  postId   String?
+  tags     Tag[]
+  user     User     @relation(fields: [userId], references: [id])
+  userId   String
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Tag {
+  id       String   @id @default(uuid())
+  tag      String   @unique()
+  posts    Post[]
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt()
+}
+
+model Media {
+  id        String    @id @default(uuid())
+  url       String
+  bucketRef String    @unique()
+  blurHash  String
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post?     @relation(fields: [postId], references: [id])
+  postId    String?
+  type      MediaType @default(IMAGE)
+  createAt  DateTime  @default(now())
+  updateAt  DateTime  @updatedAt()
+}
+
+enum Provider {
+  GOOGLE
+  FACEBOOK
+  PASSWORD
+  PHONE
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MediaType {
+  VIDEO
+  IMAGE
+}
